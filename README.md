@@ -1,12 +1,15 @@
-# A GraalVM Clojure web application:
+# A minimal GraalVM Clojure web application:
 
 * Environment: [yogthos/config](https://github.com/yogthos/config)
 * HTTP Server: [HTTP Kit](https://github.com/http-kit/http-kit)
 * HTML templating: [Hiccup](https://github.com/weavejester/hiccup)
 * Resource management: [Mount](https://github.com/tolitius/mount)
 * Routing: [Reitit](https://metosin.github.io/reitit/)
-* Migrations: [Migratus](https://github.com/yogthos/migratus)
-* DB access: [clojure.java.jdbc](https://github.com/clojure/java.jdbc) + Postgres
+
+
+### [Postgres with `clojure.java.jdbc`](https://github.com/yogthos/graal-web-app-example/tree/postgres)
+
+### [Authentication and Sessions](https://github.com/yogthos/graal-web-app-example/tree/auth)
 
 ## Requirements
 
@@ -15,15 +18,10 @@
 
 ## Usage
 
-Set you database connection in the `config.edn` file, e.g:
+The HTTP port for the application is declared in the `config.edn` file:
 
 ```clojure
-{:db {:dbtype   "postgres"
-      :dbname   "myapp_dev"
-      :host     "localhost"
-      :port     5432
-      :user     "db_user_name_here"
-      :password "db_user_password_here"}}
+{:port 3000}
 ```
 
 Run in dev mode:
@@ -40,4 +38,4 @@ Compile native binary by running:
 
 run the app:
 
-    target/my-app
+    target/app
