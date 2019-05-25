@@ -4,18 +4,19 @@
   :license {:name "MIT license"
             :url  "https://opensource.org/licenses/MIT"}
 
-  :dependencies [[hiccup "1.0.5"]
+  :dependencies [[buddy/buddy-hashers "1.3.0"]
+                 [hiccup "1.0.5"]
                  [http-kit "2.3.0"]
                  [json-html "0.4.5"]
                  [metosin/jsonista "0.2.2"]
                  [metosin/reitit "0.3.1"]
-                 [ring/ring-defaults "0.3.2"]                 
                  [metosin/ring-http-response "0.9.1"]
                  [migratus "1.2.3"]
                  [mount "0.1.16"]
                  [org.clojure/clojure "1.9.0"]
                  [org.clojure/java.jdbc "0.7.9"]
                  [org.postgresql/postgresql "42.2.5"]
+                 [ring/ring-defaults "0.3.2"]
                  [yogthos/config "1.1.2"]]
 
   :plugins [[io.taylorwood/lein-native-image "0.3.0"]

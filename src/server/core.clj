@@ -2,26 +2,32 @@
   (:require 
    [clojure.java.jdbc :as jdbc]
    [config.core :refer [load-env]]
+   [buddy.hashers :as hashers]
    [hiccup.page :as hiccup]
    [json-html.core :as json-html]
    [jsonista.core :as json]
    [migratus.core :as migratus]
    [mount.core :refer [defstate] :as mount]
    [org.httpkit.server :as http]
-   [reitit.ring :as ring]
+   [reitit.ring :as ring]   
    [ring.middleware.defaults
-    :refer [wrap-defaults
-            api-defaults]]
-   [ring.middleware.resource
-    :refer [wrap-resource]]
+    :refer [wrap-defaults api-defaults site-defaults]]
    [ring.util.http-response :refer :all]
-   [ring.util.response :as response])
+   [ring.util.response :as response] 
+   [server.params :refer [wrap-body]]
+   [server.session :refer [wrap-session]])
+  (:import )
   (:gen-class))
 
 ;; Graal does not support reflection calls
 (set! *warn-on-reflection* true)
 
 (defstate env :start (load-env))
+
+(defn html-response [response]
+  (-> response
+      (ok)
+      (header "content-type" "text/html")))
 
 (defn json-response [response]
   (-> response
@@ -33,32 +39,52 @@
   (ring/ring-handler
     (ring/router
       [["/"
-        (fn [request]
-          (-> (hiccup/html5
-               [:head (hiccup/include-css "screen.css")]
-               [:div.content
-                [:h2 "Welcome to Graal 🔥🔥🔥"]
-                [:p "your address is: " (:remote-addr request)]
-                [:ul 
-                 [:li [:a {:href "/json"} "JSON example"]]
-                 [:li [:a {:href "/users"} "DB query example"]]]])
-              (ok)
-              (header "content-type" "text/html")))]
+        {:get (fn [{:keys [session] :as request}]
+                (-> (hiccup/html5
+                     [:head (hiccup/include-css "screen.css")]
+                     [:div.content
+                      [:h2 "Welcome to Graal 🔥🔥🔥"]
+                      [:p "your address is: " (:remote-addr request)]
+                      (if-let [user (:user session)]
+                        [:div
+                         [:p "Logged in as " (:userid user)]
+                         [:form {:action "/logout"}
+                          [:button {:type "submit"} "logout"]]]
+                        [:form {:action "/login" :method "POST"}
+                         [:label "userid"]
+                         [:input {:type     :text
+                                  :name     "userid"
+                                  :required true}]
+                         [:label "password"]
+                         [:input {:type :password
+                                  :name "pass"
+                                  :required true}]
+                         [:button {:type "submit"} "login"]])
+                      [:ul 
+                       [:li [:a {:href "/json"} "JSON example"]]
+                       [:li [:a {:href "/users"} "DB query example"]]]])
+                    (html-response)))}]
+       ["/login"
+        {:post (fn [{:keys [body session] :as request}]                 
+                 (let [user (first (jdbc/query (:db env) ["select * from users where userid=?" (:userid body)]))]
+                   (if (hashers/check (:pass body) (:pass user))
+                     (assoc (found "/") :session (assoc session :user {:userid "bob"}))
+                     (found "/"))))}]
+       ["/logout"
+        {:get (fn [_] (assoc (found "/") :session nil))}]
        ["/json"
-        (fn [request]
-          (-> request
-              (select-keys [:server-port :server-name :remote-addr :scheme :uri :headers])
-              (json-response)))]
+        {:get (fn [request]
+           (-> request
+             (select-keys [:server-port :server-name :remote-addr :scheme :uri :headers])
+             (json-response)))}]
        ["/users"
-        (fn [_]
-          (-> (hiccup/html5
-               [:head [:style (-> "json.human.css" clojure.java.io/resource slurp)]]
-               [:div
-                [:h2 "USERS"]
-                (json-html/edn->html
-                 (jdbc/query (:db env) ["select * from users"]))])
-              (ok)
-              (header "content-type" "text/html")))]])))
+        {:get (fn [_]
+                (-> (hiccup/html5
+                     [:head [:style (-> "json.human.css" clojure.java.io/resource slurp)]]
+                     [:div
+                      [:h2 "USERS"]
+                      (json-html/edn->html (jdbc/query (:db env) ["select userid, first_name, last_name, email from users"]))])
+                    (html-response)))}]])))
 
 (defmethod response/resource-data :resource
   [^java.net.URL url]
@@ -66,16 +92,22 @@
     {:content        (.getInputStream conn)
      :content-length (let [len (.getContentLength conn)] (if-not (pos? len) len))}))
 
-(defn parse-port [args]
-  (or (when-not (empty? args) (Integer/parseInt (first args))) 3000))
+(defstate server
+  :start (let [port (:port env)]
+           (println "🔥 starting on port:" port "🔥")           
+           (-> handler
+               (wrap-session)  
+               (wrap-body)
+               (wrap-defaults (assoc api-defaults
+                                     :cookies   true
+                                     :params    nil
+                                     :static    {:resources "public"}))
+               (http/run-server {:port port})))
+  :stop (when server
+          (server :timeout 100)))
 
 (defn -main [& args]
-  (let [port (parse-port args)]
-    (mount/start)
-    (migratus/migrate {:store :database :db (:db env)})
-    (-> handler
-        (wrap-resource "public")
-        (wrap-defaults api-defaults)
-        (http/run-server {:port port}))
-    (println "🔥 started on port:" port "🔥")))
+  (mount/start)
+  (migratus/migrate {:store :database
+                     :db    (:db env)}))
 

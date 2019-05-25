@@ -3,6 +3,7 @@
 * Environment: [yogthos/config](https://github.com/yogthos/config)
 * HTTP Server: [HTTP Kit](https://github.com/http-kit/http-kit)
 * HTML templating: [Hiccup](https://github.com/weavejester/hiccup)
+* Password hashing: [buddy-hashers](https://github.com/funcool/buddy-hashers)
 * Resource management: [Mount](https://github.com/tolitius/mount)
 * Routing: [Reitit](https://metosin.github.io/reitit/)
 * Migrations: [Migratus](https://github.com/yogthos/migratus)
@@ -15,7 +16,7 @@
 
 ## Usage
 
-Set you database connection in the `config.edn` file, e.g:
+The HTTP port and the database connection are declared in the config.edn file:
 
 ```clojure
 {:db {:dbtype   "postgres"
@@ -23,7 +24,8 @@ Set you database connection in the `config.edn` file, e.g:
       :host     "localhost"
       :port     5432
       :user     "db_user_name_here"
-      :password "db_user_password_here"}}
+      :password "db_user_password_here"}
+ :port 3000}
 ```
 
 Run in dev mode:
@@ -40,4 +42,4 @@ Compile native binary by running:
 
 run the app:
 
-    target/my-app
+    target/app
