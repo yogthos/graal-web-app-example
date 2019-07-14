@@ -6,11 +6,11 @@
 
   :dependencies [[hiccup "1.0.5"]
                  [http-kit "2.3.0"]
-                 [metosin/reitit "0.3.1"]
+                 [metosin/reitit "0.3.9"]
                  [ring/ring-defaults "0.3.2"]                 
                  [mount "0.1.16"]
                  [org.clojure/clojure "1.9.0"]
-                 [yogthos/config "1.1.2"]]
+                 [yogthos/config "1.1.4"]]
 
   :plugins [[io.taylorwood/lein-native-image "0.3.0"]
             [nrepl/lein-nrepl "0.3.2"]]
