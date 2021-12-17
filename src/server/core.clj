@@ -27,9 +27,13 @@
 
 (defmethod response/resource-data :resource
   [^java.net.URL url]
-  (let [conn (.openConnection url)]
-    {:content        (.getInputStream conn)
-     :content-length (let [len (.getContentLength conn)] (if-not (pos? len) len))}))
+  ;; GraalVM resource scheme
+  (let [resource (.openConnection url)
+        len (#'ring.util.response/connection-content-length resource)]
+    (when (pos? len)
+      {:content        (.getInputStream resource)
+       :content-length len
+       :last-modified  (#'ring.util.response/connection-last-modified resource)})))
 
 (defstate env :start (load-env))
 
